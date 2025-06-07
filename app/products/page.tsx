@@ -34,16 +34,23 @@ export default function ProductsPage() {
           query = query.ilike("name", `%${searchTerm}%`)
         }
 
-        if (selectedCategory) {
+        if (selectedCategory && selectedCategory !== "all") {
           query = query.eq("category", selectedCategory)
         }
 
         const { data, error } = await query.order("created_at", { ascending: false })
 
-        if (error) throw error
+        if (error) {
+          console.error("Error fetching products:", error)
+          if (error.code === "PGRST116" || error.message.includes("does not exist")) {
+            setProducts([])
+          }
+          return
+        }
         setProducts(data || [])
       } catch (error) {
         console.error("Error fetching products:", error)
+        setProducts([])
       } finally {
         setLoading(false)
       }
@@ -57,12 +64,19 @@ export default function ProductsPage() {
       try {
         const { data, error } = await supabase.from("products").select("category").not("category", "is", null)
 
-        if (error) throw error
+        if (error) {
+          console.error("Error fetching categories:", error)
+          if (error.code === "PGRST116" || error.message.includes("does not exist")) {
+            setCategories([])
+          }
+          return
+        }
 
         const uniqueCategories = [...new Set(data?.map((item) => item.category).filter(Boolean))] as string[]
         setCategories(uniqueCategories)
       } catch (error) {
         console.error("Error fetching categories:", error)
+        setCategories([])
       }
     }
 

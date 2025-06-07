@@ -31,10 +31,18 @@ export default function FeaturedProducts() {
           .limit(4)
           .order("created_at", { ascending: false })
 
-        if (error) throw error
+        if (error) {
+          console.error("Error fetching products:", error)
+          // If table doesn't exist, show empty state instead of error
+          if (error.code === "PGRST116" || error.message.includes("does not exist")) {
+            setProducts([])
+          }
+          return
+        }
         setProducts(data || [])
       } catch (error) {
         console.error("Error fetching products:", error)
+        setProducts([])
       } finally {
         setLoading(false)
       }

@@ -35,16 +35,23 @@ export default function ServicesPage() {
           query = query.or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
         }
 
-        if (selectedCategory) {
+        if (selectedCategory && selectedCategory !== "all") {
           query = query.eq("category", selectedCategory)
         }
 
         const { data, error } = await query.order("rating", { ascending: false })
 
-        if (error) throw error
+        if (error) {
+          console.error("Error fetching services:", error)
+          if (error.code === "PGRST116" || error.message.includes("does not exist")) {
+            setServices([])
+          }
+          return
+        }
         setServices(data || [])
       } catch (error) {
         console.error("Error fetching services:", error)
+        setServices([])
       } finally {
         setLoading(false)
       }
@@ -58,12 +65,19 @@ export default function ServicesPage() {
       try {
         const { data, error } = await supabase.from("services").select("category").not("category", "is", null)
 
-        if (error) throw error
+        if (error) {
+          console.error("Error fetching categories:", error)
+          if (error.code === "PGRST116" || error.message.includes("does not exist")) {
+            setCategories([])
+          }
+          return
+        }
 
         const uniqueCategories = [...new Set(data?.map((item) => item.category).filter(Boolean))] as string[]
         setCategories(uniqueCategories)
       } catch (error) {
         console.error("Error fetching categories:", error)
+        setCategories([])
       }
     }
 

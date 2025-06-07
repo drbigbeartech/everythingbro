@@ -32,10 +32,18 @@ export default function FeaturedServices() {
           .limit(3)
           .order("rating", { ascending: false })
 
-        if (error) throw error
+        if (error) {
+          console.error("Error fetching services:", error)
+          // If table doesn't exist, show empty state instead of error
+          if (error.code === "PGRST116" || error.message.includes("does not exist")) {
+            setServices([])
+          }
+          return
+        }
         setServices(data || [])
       } catch (error) {
         console.error("Error fetching services:", error)
+        setServices([])
       } finally {
         setLoading(false)
       }
